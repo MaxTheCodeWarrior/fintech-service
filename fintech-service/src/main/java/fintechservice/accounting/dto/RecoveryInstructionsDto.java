@@ -1,4 +1,4 @@
-package telran.fintechservice.accounting.dto;
+package fintechservice.accounting.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

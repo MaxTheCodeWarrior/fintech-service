@@ -1,4 +1,4 @@
-package telran.fintechservice;
+package fintechservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,18 +1,24 @@
-package telran.fintechservice.accounting.model;
+package fintechservice.accounting.model;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.data.annotation.Id;
+import fintechservice.accounting.dto.UserRoleEnum;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import telran.fintechservice.accounting.dto.UserRoleEnum;
 
-@Getter
+
+
+@Entity
 @NoArgsConstructor
 @Setter
+@Getter
+@Table(name = "users")
 public class User {
 
 	@Id

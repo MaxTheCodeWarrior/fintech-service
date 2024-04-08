@@ -1,6 +1,8 @@
-package telran.fintechservice.accounting.controller;
+package fintechservice.accounting.controller;
 
 import java.security.Principal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -15,13 +17,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import fintechservice.accounting.dto.RecoveryInstructionsDto;
+import fintechservice.accounting.dto.UserCreateDto;
+import fintechservice.accounting.dto.UserDto;
+import fintechservice.accounting.dto.UserRolesDto;
+import fintechservice.accounting.dto.UserUpdateDto;
+import fintechservice.accounting.service.AccountingService;
 import lombok.RequiredArgsConstructor;
-import telran.fintechservice.accounting.dto.RecoveryInstructionsDto;
-import telran.fintechservice.accounting.dto.UserCreateDto;
-import telran.fintechservice.accounting.dto.UserDto;
-import telran.fintechservice.accounting.dto.UserRolesDto;
-import telran.fintechservice.accounting.dto.UserUpdateDto;
-import telran.fintechservice.accounting.service.AccountingService;
 
 @Controller
 @RequiredArgsConstructor
@@ -75,10 +77,10 @@ public class AccountingController {
 
 	@GetMapping("/recovery/{email}")
 	public ResponseEntity<Void> recoveryPasswordByLink(@PathVariable String email) {
-
-		// TODO for this method needs authenticated email session
-
-		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+	    String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+	    Pattern pattern = Pattern.compile(emailRegex);
+	    Matcher matcher = pattern.matcher(email);
+	    return matcher.matches() ?  ResponseEntity.status(HttpStatus.ACCEPTED).build() :  ResponseEntity.status(HttpStatus.CONFLICT).build();
 	}
 
 	/* @formatter:off */
@@ -94,7 +96,7 @@ public class AccountingController {
 	public ResponseEntity<RecoveryInstructionsDto> recoveryPassword(@RequestHeader("X-Password") String password,
 			Principal principal) {
 		if (accountingService.recoveryPassword(password, principal.getName())) {
-			return ResponseEntity.status(HttpStatus.OK).body(new RecoveryInstructionsDto(principal.getName()));
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(new RecoveryInstructionsDto(principal.getName()));
 		}
 		return ResponseEntity.status(HttpStatus.CONFLICT).build();
 	}

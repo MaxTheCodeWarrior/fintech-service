@@ -1,9 +1,9 @@
-package telran.fintechservice.accounting.service;
+package fintechservice.accounting.service;
 
-import telran.fintechservice.accounting.dto.UserCreateDto;
-import telran.fintechservice.accounting.dto.UserDto;
-import telran.fintechservice.accounting.dto.UserRolesDto;
-import telran.fintechservice.accounting.dto.UserUpdateDto;
+import fintechservice.accounting.dto.UserCreateDto;
+import fintechservice.accounting.dto.UserDto;
+import fintechservice.accounting.dto.UserRolesDto;
+import fintechservice.accounting.dto.UserUpdateDto;
 
 public interface AccountingService {
 

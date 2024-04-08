@@ -1,4 +1,4 @@
-package telran.fintechservice.accounting.dto;
+package fintechservice.accounting.dto;
 
 import java.util.Set;
 
