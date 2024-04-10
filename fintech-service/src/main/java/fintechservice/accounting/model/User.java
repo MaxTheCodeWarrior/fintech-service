@@ -1,5 +1,6 @@
 package fintechservice.accounting.model;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,14 +13,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
-
 @Entity
 @NoArgsConstructor
 @Setter
 @Getter
 @Table(name = "users")
-public class User {
+public class User implements Serializable {
+
+	private static final long serialVersionUID = 5132458793756807103L;
 
 	@Id
 	String login;
