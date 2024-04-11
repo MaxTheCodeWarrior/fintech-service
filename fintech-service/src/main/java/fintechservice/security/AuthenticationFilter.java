@@ -32,7 +32,19 @@ public class AuthenticationFilter implements Filter {
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
+		 // Set CORS headers
+        response.setHeader("Access-Control-Allow-Origin", "http://127.0.0.1:3000");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "*");
+        response.setHeader("Access-Control-Expose-Headers", "register");
+        response.setHeader("Access-Control-Max-Age", "3600");
 
+        // Handle OPTIONS request
+        if (request.getMethod().equals("OPTIONS")) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+	        
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
 			try {
 				String[] credentials = getCredentials(request.getHeader("Authorization"));

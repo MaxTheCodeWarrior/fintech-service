@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/account")
+
 public class AccountingController {
 
 	final AccountingService accountingService;
@@ -107,7 +108,7 @@ public class AccountingController {
 		return ResponseEntity.status(HttpStatus.OK).body(userRolesDto);
 	}
 
-	@PutMapping("/password")
+	@PutMapping("/user/password")
 	public ResponseEntity<Void> changeUserPassword(Principal principal,
 			@RequestHeader("X-Password") String newPassword) {
 		accountingService.changeUserPassword(principal.getName(), newPassword);
