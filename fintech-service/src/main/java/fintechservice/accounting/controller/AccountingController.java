@@ -1,7 +1,6 @@
 package fintechservice.accounting.controller;
 
 import java.security.Principal;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,7 +23,6 @@ import fintechservice.accounting.dto.UserDto;
 import fintechservice.accounting.dto.UserLoginDto;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
-import fintechservice.accounting.model.User;
 import fintechservice.accounting.service.AccountingService;
 import fintechservice.security.CustomWebSecurity;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,20 +46,9 @@ public class AccountingController {
 
 	@PostMapping("/login")
 	public ResponseEntity<UserDto> loginUser(@RequestBody UserLoginDto userLoginDto, HttpServletRequest request) {
-
 		// TODO check if already logged in
-
-		String login = userLoginDto.getLogin();
-		String password = userLoginDto.getPassword();
-		// Authenticate the user
-		Optional<User> optionalUser = customWebSecurity.authenticateUser(login, password);
-		if (optionalUser.isPresent()) {
-			// If authentication is successful, store the user in the session
-			User authenticatedUser = optionalUser.get();
-			customWebSecurity.loginUser(request, authenticatedUser);
-			return ResponseEntity.status(HttpStatus.OK).build();
-		}
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		return accountingService.loginUser(userLoginDto, request) ? ResponseEntity.status(HttpStatus.OK).build()
+				: ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
 	}
 
@@ -128,8 +115,9 @@ public class AccountingController {
 		UserRolesDto userRolesDto = accountingService.deleteUserRole(user, role);
 		return ResponseEntity.status(HttpStatus.OK).body(userRolesDto);
 	}
-	//TODO check this filter
-	@PutMapping("/user/password") //X-Password variable from header not the body!
+
+	// TODO check this filter
+	@PutMapping("/user/password") // X-Password variable from header not the body!
 	public ResponseEntity<Void> changeUserPassword(Principal principal,
 			@RequestHeader("X-Password") String newPassword) {
 		accountingService.changeUserPassword(principal.getName(), newPassword);

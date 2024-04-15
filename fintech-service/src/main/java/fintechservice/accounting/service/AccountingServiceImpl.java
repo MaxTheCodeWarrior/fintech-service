@@ -1,39 +1,60 @@
 package fintechservice.accounting.service;
 
+import java.util.Optional;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.CommandLineRunner;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import fintechservice.accounting.dao.AccountingRepository;
 import fintechservice.accounting.dto.UserCreateDto;
 import fintechservice.accounting.dto.UserDto;
+import fintechservice.accounting.dto.UserLoginDto;
 import fintechservice.accounting.dto.UserRoleEnum;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
 import fintechservice.accounting.model.User;
 import fintechservice.exceptions.UserNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class AccountingServiceImpl implements AccountingService, CommandLineRunner {
-	final AccountingRepository accountRepository;
+	final AccountingRepository accountingRepository;
 	final PasswordEncoder passwordEncoder;
+
 	final ModelMapper modelMapper;
-	
+
 	@Override
 	public UserDto registerUser(UserCreateDto userCreateDto) {
-		if (accountRepository.existsById(userCreateDto.getLogin())) {
+		if (accountingRepository.existsById(userCreateDto.getLogin())) {
 			return null;
 		}
 		User user = modelMapper.map(userCreateDto, User.class);
 		String password = passwordEncoder.encode(userCreateDto.getPassword());
 		user.setPassword(password);
 		user.getRoles().add(UserRoleEnum.USER);
-		accountRepository.save(user);
+		accountingRepository.save(user);
 		return modelMapper.map(user, UserDto.class);
+	}
+
+	@Override
+	public boolean loginUser(UserLoginDto userLoginDto, HttpServletRequest request) {
+		String login = userLoginDto.getLogin();
+		String password = userLoginDto.getPassword();
+		// Authenticate the user
+		Optional<User> optionalUser = accountingRepository.findById(login)
+				.filter(user -> passwordEncoder.matches(password, user.getPassword()));
+		if (optionalUser.isPresent()) {
+//			// If authentication is successful, store the user in the session
+//			User authenticatedUser = optionalUser.get();
+//			customWebSecurity.loginUser(request, authenticatedUser);
+			return true;
+		}
+		return false;
+
 	}
 
 	/* @formatter:off */
@@ -68,49 +89,49 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 
 	@Override
 	public boolean recoveryPassword(String xPassword, String login) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		User user = accountingRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		return passwordEncoder.matches(xPassword, user.getPassword());
 
 	}
 
 	@Override
 	public UserDto deleteUser(String login) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
-		accountRepository.delete(user);
+		User user = accountingRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		accountingRepository.delete(user);
 		return modelMapper.map(user, UserDto.class);
 	}
 
 	@Override
 	public UserDto updateUser(String login, UserUpdateDto userUppdateDto) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		User user = accountingRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		user.setFirstName(userUppdateDto.getFirstName());
 		user.setLastName(userUppdateDto.getLastName());
-		accountRepository.save(user);
+		accountingRepository.save(user);
 		return modelMapper.map(user, UserDto.class);
 	}
 
 	@Override
 	public UserRolesDto addUserRole(String login, String role) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		User user = accountingRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		user.getRoles().add(UserRoleEnum.valueOf(role.toUpperCase()));
-		accountRepository.save(user);
+		accountingRepository.save(user);
 		return modelMapper.map(user, UserRolesDto.class);
 	}
 
 	@Override
 	public UserRolesDto deleteUserRole(String login, String role) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		User user = accountingRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		user.getRoles().remove(UserRoleEnum.valueOf(role.toUpperCase()));
-		accountRepository.save(user);
+		accountingRepository.save(user);
 		return modelMapper.map(user, UserRolesDto.class);
 	}
 
 	@Override
 	public void changeUserPassword(String login, String newPassword) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		User user = accountingRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		String password = passwordEncoder.encode(newPassword);
 		user.setPassword(password);
-		accountRepository.save(user);
+		accountingRepository.save(user);
 	}
 
 	/* @formatter:off */
@@ -118,7 +139,7 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 	//CommandLineRunner for creating admin instance
 	@Override
 	public void run(String... args) throws Exception {
-		if(!accountRepository.existsById("admin")) {
+		if(!accountingRepository.existsById("admin")) {
 			User user = new User();
 				user.setLogin("admin");
 					user.setFirstName("");
@@ -126,11 +147,12 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 							user.setPassword(passwordEncoder.encode("admin"));
 								user.getRoles().add(UserRoleEnum.MODERATOR);
 									user.getRoles().add(UserRoleEnum.ADMINISTRATOR);
-										accountRepository.save(user);
+										accountingRepository.save(user);
 		}
 		
 	}
 
+	
 
 
 

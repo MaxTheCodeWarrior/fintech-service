@@ -36,10 +36,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CommunicationServiceImpl implements CommunicationService {
 
-
 	final CommunicationRepository communicationRepository;
 	final ModelMapper modelMapper;
-	
+
 	@Override
 	public boolean addHistoryWithFile(String name, String path) throws PathInvalidException {
 		if (Files.exists(Paths.get(path)) && Files.isRegularFile(Paths.get(path))) {
@@ -93,17 +92,18 @@ public class CommunicationServiceImpl implements CommunicationService {
 	public SourceHistoryDto getTimeHistoryForIndex(@PathVariable String index) {
 		SourceHistoryDto sourceHistoryDto = new SourceHistoryDto();
 		sourceHistoryDto.setSource(index);
-		Map<String, LocalDate> dates = communicationRepository.findMinMaxDatesByIndex(index);
-		LocalDate from = dates.get("minDate");
-		LocalDate to = dates.get("maxDate");
-		sourceHistoryDto.setFromData(from);
-		sourceHistoryDto.setToData(to);
+//		Map<String, LocalDate> dates = communicationRepository.findMinMaxDatesByIndex(index);
+//		LocalDate from = dates.get("minDate");
+//		LocalDate to = dates.get("maxDate");
+//		sourceHistoryDto.setFromData(from);
+//		sourceHistoryDto.setToData(to);
 		return sourceHistoryDto;
 	}
 
 	@Override
 	public Iterable<String> getAllIndexes() {
-		return communicationRepository.getAllIndexList();
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -111,7 +111,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 		String index = indexRequestDto.getIndexs().get(0);
 		LocalDate from = indexRequestDto.getFrom();
 		LocalDate to = indexRequestDto.getTo();
-		communicationRepository.findByIndexBetween(index, from, to);
+//		communicationRepository.findByIndexBetween(index, from, to);
 
 		// TODO
 		return null;

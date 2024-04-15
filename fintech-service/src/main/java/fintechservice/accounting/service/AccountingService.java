@@ -2,14 +2,16 @@ package fintechservice.accounting.service;
 
 import fintechservice.accounting.dto.UserCreateDto;
 import fintechservice.accounting.dto.UserDto;
+import fintechservice.accounting.dto.UserLoginDto;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface AccountingService {
 
 	UserDto registerUser(UserCreateDto userCreateDto);
 
-
+	boolean loginUser(UserLoginDto userLoginDto, HttpServletRequest request);
 
 	void recoveryPasswordByLink(String url);
 
