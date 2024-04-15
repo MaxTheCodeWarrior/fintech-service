@@ -16,40 +16,32 @@ import fintechservice.communication.dto.SourceResponseDto;
 
 public interface CommunicationService {
 
-	boolean addHistoryWithFile(String fileName);
+	boolean addHistoryWithFile(String indexName, String path);
 
 	Iterable<SourceResponseDto> parserForYahooFinance(SourceRequestDto sourceRequestDto);
 
 	Iterable<SourceLinkDto> addNewIndexes(SourceLinksRequestDto sourceLinksRequestDto);
-	
-	
 
 	SourceHistoryDto getTimeHistoryForIndex(String index);
 
 	Iterable<String> getAllIndexes();
 
-	
 	Iterable<IndexHistoryResponseDto> getPeriodBetweenForIndex(IndexRequestDto indexRequestDto);
 
 	Iterable<IndexCloseValueDto> getAllValueCloseBetween(IndexRequestDto indexRequestDto);
 
-	
-	
-	IndexHistoryResponseDto calcSumPackage(IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto); 
+	IndexHistoryResponseDto calcSumPackage(IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto);
 
 	IndexIncomeApyResponseDto calcIncomeWithApy(IndexRequestDto indexRequestDto);
-	
+
 	Iterable<IndexIncomeApyAllDateDto> calcIncomeWithApyAllDate(IndexRequestDto indexRequestDto);
-	
+
 	Iterable<IndexIncomeIrrResponseDto> calcIncomeWithIrr(IndexRequestDto indexRequestDto);
-	
-	String calcCorrelation (IndexCorrelationRequestDto indexCorrelationRequestDto);
-	
-	
-	
+
+	String calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto);
+
 	boolean deleteAllHistoryForCompany();
-	
+
 	double prediction();
-	
-	
+
 }

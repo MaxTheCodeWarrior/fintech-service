@@ -1,8 +1,9 @@
 package fintechservice.accounting.service;
 
-import org.mindrot.jbcrypt.BCrypt;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.CommandLineRunner;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import fintechservice.accounting.dao.AccountingRepository;
@@ -12,7 +13,6 @@ import fintechservice.accounting.dto.UserRoleEnum;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
 import fintechservice.accounting.model.User;
-import fintechservice.exceptions.UserExistsException;
 import fintechservice.exceptions.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -20,15 +20,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccountingServiceImpl implements AccountingService, CommandLineRunner {
 	final AccountingRepository accountRepository;
+	final PasswordEncoder passwordEncoder;
 	final ModelMapper modelMapper;
-
+	
 	@Override
 	public UserDto registerUser(UserCreateDto userCreateDto) {
 		if (accountRepository.existsById(userCreateDto.getLogin())) {
-			throw new UserExistsException();
+			return null;
 		}
 		User user = modelMapper.map(userCreateDto, User.class);
-		String password = BCrypt.hashpw(userCreateDto.getPassword(), BCrypt.gensalt());
+		String password = passwordEncoder.encode(userCreateDto.getPassword());
 		user.setPassword(password);
 		user.getRoles().add(UserRoleEnum.USER);
 		accountRepository.save(user);
@@ -46,6 +47,8 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 	 * actual URL of the application.
 	 */
 	/* @formatter:on */
+
+	// TODO Login method!
 
 	@Override
 	public void recoveryPasswordByLink(String email) {
@@ -66,7 +69,7 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 	@Override
 	public boolean recoveryPassword(String xPassword, String login) {
 		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
-		return BCrypt.checkpw(xPassword, user.getPassword());
+		return passwordEncoder.matches(xPassword, user.getPassword());
 
 	}
 
@@ -105,15 +108,9 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 	@Override
 	public void changeUserPassword(String login, String newPassword) {
 		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
-		String password = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+		String password = passwordEncoder.encode(newPassword);
 		user.setPassword(password);
 		accountRepository.save(user);
-	}
-
-	@Override
-	public UserDto getUser(String login) {
-		User user = accountRepository.findById(login).orElseThrow(UserNotFoundException::new);
-		return modelMapper.map(user, UserDto.class);
 	}
 
 	/* @formatter:off */
@@ -126,7 +123,7 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 				user.setLogin("admin");
 					user.setFirstName("");
 						user.setLastName("");
-							user.setPassword( BCrypt.hashpw("admin", BCrypt.gensalt()));
+							user.setPassword(passwordEncoder.encode("admin"));
 								user.getRoles().add(UserRoleEnum.MODERATOR);
 									user.getRoles().add(UserRoleEnum.ADMINISTRATOR);
 										accountRepository.save(user);

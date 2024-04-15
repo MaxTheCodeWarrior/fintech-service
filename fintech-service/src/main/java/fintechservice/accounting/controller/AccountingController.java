@@ -1,6 +1,7 @@
 package fintechservice.accounting.controller;
 
 import java.security.Principal;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,9 +21,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import fintechservice.accounting.dto.RecoveryInstructionsDto;
 import fintechservice.accounting.dto.UserCreateDto;
 import fintechservice.accounting.dto.UserDto;
+import fintechservice.accounting.dto.UserLoginDto;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
+import fintechservice.accounting.model.User;
 import fintechservice.accounting.service.AccountingService;
+import fintechservice.security.CustomWebSecurity;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -32,16 +37,32 @@ public class AccountingController {
 
 	final AccountingService accountingService;
 	final ModelMapper modelMapper;
+	final CustomWebSecurity customWebSecurity;
 
 	@PostMapping("/register")
 	public ResponseEntity<UserDto> register(@RequestBody UserCreateDto userCreateDto) {
 		UserDto userDto = accountingService.registerUser(userCreateDto);
-		return ResponseEntity.status(HttpStatus.OK).body(userDto);
+		return userDto != null ? ResponseEntity.status(HttpStatus.OK).body(userDto)
+				: ResponseEntity.status(HttpStatus.CONFLICT).build();
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<UserDto> loginUser(Principal principal) {
-		return ResponseEntity.status(HttpStatus.OK).body(accountingService.getUser(principal.getName()));
+	public ResponseEntity<UserDto> loginUser(@RequestBody UserLoginDto userLoginDto, HttpServletRequest request) {
+
+		// TODO check if already logged in
+
+		String login = userLoginDto.getLogin();
+		String password = userLoginDto.getPassword();
+		// Authenticate the user
+		Optional<User> optionalUser = customWebSecurity.authenticateUser(login, password);
+		if (optionalUser.isPresent()) {
+			// If authentication is successful, store the user in the session
+			User authenticatedUser = optionalUser.get();
+			customWebSecurity.loginUser(request, authenticatedUser);
+			return ResponseEntity.status(HttpStatus.OK).build();
+		}
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
 	}
 
 	@DeleteMapping("/user/{user}")
@@ -51,8 +72,8 @@ public class AccountingController {
 	}
 
 	@PutMapping("/user/{user}")
-	public ResponseEntity<UserDto> updateUser(@PathVariable String user, @RequestBody UserUpdateDto userUppdateDto) {
-		UserDto userDto = accountingService.updateUser(user, userUppdateDto);
+	public ResponseEntity<UserDto> updateUser(@PathVariable String user, @RequestBody UserUpdateDto userUpdateDto) {
+		UserDto userDto = accountingService.updateUser(user, userUpdateDto);
 		return ResponseEntity.status(HttpStatus.OK).body(userDto);
 	}
 
@@ -77,10 +98,11 @@ public class AccountingController {
 
 	@GetMapping("/recovery/{email}")
 	public ResponseEntity<Void> recoveryPasswordByLink(@PathVariable String email) {
-	    String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-	    Pattern pattern = Pattern.compile(emailRegex);
-	    Matcher matcher = pattern.matcher(email);
-	    return matcher.matches() ?  ResponseEntity.status(HttpStatus.ACCEPTED).build() :  ResponseEntity.status(HttpStatus.CONFLICT).build();
+		String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+		Pattern pattern = Pattern.compile(emailRegex);
+		Matcher matcher = pattern.matcher(email);
+		return matcher.matches() ? ResponseEntity.status(HttpStatus.ACCEPTED).build()
+				: ResponseEntity.status(HttpStatus.CONFLICT).build();
 	}
 
 	/* @formatter:off */
@@ -106,19 +128,12 @@ public class AccountingController {
 		UserRolesDto userRolesDto = accountingService.deleteUserRole(user, role);
 		return ResponseEntity.status(HttpStatus.OK).body(userRolesDto);
 	}
-
-	@PutMapping("/password")
+	//TODO check this filter
+	@PutMapping("/user/password") //X-Password variable from header not the body!
 	public ResponseEntity<Void> changeUserPassword(Principal principal,
 			@RequestHeader("X-Password") String newPassword) {
 		accountingService.changeUserPassword(principal.getName(), newPassword);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-
-	}
-
-	@GetMapping("/user/{user}")
-	public ResponseEntity<UserDto> getUser(@PathVariable String user) {
-		UserDto userDto = modelMapper.map(accountingService.getUser(user), UserDto.class);
-		return ResponseEntity.status(HttpStatus.OK).body(userDto);
 
 	}
 

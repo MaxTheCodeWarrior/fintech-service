@@ -9,7 +9,7 @@ public interface AccountingService {
 
 	UserDto registerUser(UserCreateDto userCreateDto);
 
-	UserDto getUser(String login);
+
 
 	void recoveryPasswordByLink(String url);
 
