@@ -1,5 +1,7 @@
 package fintechservice.communication.controller;
 
+import java.util.List;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,10 +10,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
+import fintechservice.communication.dto.IndexDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.dto.IndexIncomeApyAllDateDto;
 import fintechservice.communication.dto.IndexIncomeApyResponseDto;
@@ -30,7 +34,7 @@ import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/communication")
+@RequestMapping("/communication")  // ATTENTION : Some methods differ from the given API !
 public class CommunicationController {
 
 	final CommunicationService communicationService;
@@ -42,7 +46,6 @@ public class CommunicationController {
 		return ResponseEntity.status(HttpStatus.OK).body(check);
 	}
 
-
 	/**
 	 * @param 
 	 * This is a parser that works with the website https://finance.yahoo.com/. 
@@ -51,11 +54,10 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/parser")
-	public ResponseEntity<Iterable<SourceResponseDto>> parserForYahooFinance(SourceRequestDto sourceRequestDto) {
+	public ResponseEntity<Iterable<SourceResponseDto>> parserForYahooFinance(@RequestBody SourceRequestDto sourceRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
-
 
 	/**
 	 * @param  
@@ -65,11 +67,10 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/parser/addindex")
-	public ResponseEntity<Iterable<SourceLinkDto>> addNewIndexes(SourceLinksRequestDto sourceLinksRequestDto) {
+	public ResponseEntity<Iterable<SourceLinkDto>> addNewIndexes(@RequestBody SourceLinksRequestDto sourceLinksRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
-
 
 	/** 
 	 * @param 
@@ -78,21 +79,17 @@ public class CommunicationController {
 	 * To display all indexes, use the Get All Indexes request.
 	 */
 	
-
 	@GetMapping("/index/{index}")
-	public ResponseEntity<SourceHistoryDto> getTimeHistoryForIndex(String index) {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseEntity<SourceHistoryDto> getTimeHistoryForIndex(@PathVariable String index) {
+		return ResponseEntity.status(HttpStatus.OK).body(communicationService.getTimeHistoryForIndex(index));
 	}
 
 	// Returns all indexes that can be used in the application.
 	@GetMapping("/index")
-	public ResponseEntity<Iterable<String>> getAllIndexes() {
-		communicationService.getAllIndexes();
-		return ResponseEntity.status(HttpStatus.OK).body(null);
+	public ResponseEntity<List<IndexDto>> getAllIndexes() {
+		return ResponseEntity.status(HttpStatus.OK).body(communicationService.getAllIndexes());
 	}
 
-	
 	/** 
 	 * @param 
 	 * Returns statistical data on a stock for a specified index over a specified period of time. 
@@ -100,11 +97,9 @@ public class CommunicationController {
 	 * Quantity - specify the length of the type.
 	 */
 	
-
 	@PostMapping("/index")
-	public ResponseEntity<Iterable<IndexHistoryResponseDto>> getPeriodBetweenForIndex(IndexRequestDto indexRequestDto) {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseEntity<List<IndexHistoryResponseDto>> getPeriodBetweenForIndex(@RequestBody IndexRequestDto indexRequestDto) {
+		return ResponseEntity.status(HttpStatus.OK).body(communicationService.getPeriodBetweenForIndex(indexRequestDto));
 	}
 
 	/**
@@ -115,9 +110,9 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/data")
-	public ResponseEntity<Iterable<IndexCloseValueDto>> getAllValueCloseBetween(IndexRequestDto indexRequestDto) {
+	public ResponseEntity<Iterable<IndexCloseValueDto>> getAllValueCloseBetween(@RequestBody IndexRequestDto indexRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 
 	/**
@@ -127,10 +122,9 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/index/sum")
-	public ResponseEntity<IndexHistoryResponseDto> calcSumPackage(
-			IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
+	public ResponseEntity<IndexHistoryResponseDto> calcSumPackage(@RequestBody IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 	
 	/**
@@ -140,9 +134,9 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/index/apy")
-	public ResponseEntity<IndexIncomeApyResponseDto> calcIncomeWithApy(IndexRequestDto indexRequestDto) {
+	public ResponseEntity<IndexIncomeApyResponseDto> calcIncomeWithApy(@RequestBody IndexRequestDto indexRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 
 	/**
@@ -152,13 +146,12 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("index/apy_all")
-	public ResponseEntity<Iterable<IndexIncomeApyAllDateDto>> calcIncomeWithApyAllDate(
+	public ResponseEntity<Iterable<IndexIncomeApyAllDateDto>> calcIncomeWithApyAllDate(@RequestBody
 			IndexRequestDto indexRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 
-	
 	/**
 	 * @param 
 	 * Calculates the profit and internal rate of return (IRR) for stocks.
@@ -166,9 +159,9 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/indexIrr")
-	public ResponseEntity<Iterable<IndexIncomeIrrResponseDto>> calcIncomeWithIrr(IndexRequestDto indexRequestDto) {
+	public ResponseEntity<Iterable<IndexIncomeIrrResponseDto>> calcIncomeWithIrr(@RequestBody IndexRequestDto indexRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 
 	/**
@@ -178,26 +171,27 @@ public class CommunicationController {
 	 * Displays the minimum and maximum yield with a sub-period of time.
 	 */
 	
-	@PostMapping("/index//correlation")
-	public ResponseEntity<String> calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto) {
+	@PostMapping("/index/correlation")
+	public ResponseEntity<String> calcCorrelation(@RequestBody IndexCorrelationRequestDto indexCorrelationRequestDto) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
+	
 	/**
 	 * @param 
 	 * Deletes the specified stock by index from the application.
 	 */
 	
 	@DeleteMapping("/index/{index}")
-	public ResponseEntity<Boolean> deleteAllHistoryForCompany(String index) {
+	public ResponseEntity<Boolean> deleteAllHistoryForCompany(@PathVariable String index) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 
 	@GetMapping("/index/prediction/{index}")
-	public ResponseEntity<Double> prediction() {
+	public ResponseEntity<Double> prediction(@PathVariable String index) {
 		// TODO Auto-generated method stub
-		return null;
+		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
 	}
 
 }

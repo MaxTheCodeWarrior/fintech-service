@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import fintechservice.communication.dao.CommunicationRepository;
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
+import fintechservice.communication.dto.IndexDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.dto.IndexIncomeApyAllDateDto;
 import fintechservice.communication.dto.IndexIncomeApyResponseDto;
@@ -30,6 +31,7 @@ import fintechservice.communication.dto.SourceRequestDto;
 import fintechservice.communication.dto.SourceResponseDto;
 import fintechservice.communication.model.Index;
 import fintechservice.exceptions.PathInvalidException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -90,31 +92,39 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 	@Override
 	public SourceHistoryDto getTimeHistoryForIndex(@PathVariable String index) {
-		SourceHistoryDto sourceHistoryDto = new SourceHistoryDto();
-		sourceHistoryDto.setSource(index);
-//		Map<String, LocalDate> dates = communicationRepository.findMinMaxDatesByIndex(index);
-//		LocalDate from = dates.get("minDate");
-//		LocalDate to = dates.get("maxDate");
-//		sourceHistoryDto.setFromData(from);
-//		sourceHistoryDto.setToData(to);
-		return sourceHistoryDto;
+		LocalDate from = communicationRepository.findMinDateInIndex(index);
+		LocalDate to = communicationRepository.findMaxDateInIndex(index);
+		return new SourceHistoryDto(index, from, to);
 	}
 
 	@Override
-	public Iterable<String> getAllIndexes() {
-		// TODO Auto-generated method stub
-		return null;
+	public List<IndexDto> getAllIndexes() {
+		return communicationRepository.findAll().stream().map(i -> modelMapper.map(i, IndexDto.class))
+				.collect(Collectors.toList());
 	}
 
+	@Transactional
 	@Override
 	public List<IndexHistoryResponseDto> getPeriodBetweenForIndex(IndexRequestDto indexRequestDto) {
-		String index = indexRequestDto.getIndexs().get(0);
+
+		// TODO JSON parse "yyyy-M-dd" or "yyyy-MM-dd" !
+
+		String indexName = indexRequestDto.getIndexs().get(0);
 		LocalDate from = indexRequestDto.getFrom();
 		LocalDate to = indexRequestDto.getTo();
-//		communicationRepository.findByIndexBetween(index, from, to);
+		List<Index> indexes = communicationRepository.findByIndexBetween(indexName, from, to)
+				.collect(Collectors.toList());
 
-		// TODO
-		return null;
+		double max = indexes.stream().mapToDouble(Index::getHigh).max().orElse(0);
+		double mean = indexes.stream().mapToDouble(Index::getClose).average().orElse(0);
+		double median = calculateMedian(indexes);
+		double min = indexes.stream().mapToDouble(Index::getLow).min().orElse(0);
+		double std = calculateStandardDeviation(indexes, mean);
+
+		List<IndexHistoryResponseDto> response = new ArrayList<>();
+		response.add(new IndexHistoryResponseDto(from, to, indexName, indexRequestDto.getType(), max, mean, median, min,
+				std));
+		return response;
 	}
 
 	@Override
@@ -163,6 +173,21 @@ public class CommunicationServiceImpl implements CommunicationService {
 	public double prediction() {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	private double calculateMedian(List<Index> dataList) {
+		List<Double> sortedClosePrices = dataList.stream().map(Index::getClose).sorted().collect(Collectors.toList());
+		int size = sortedClosePrices.size();
+		if (size % 2 == 0) {
+			return (sortedClosePrices.get(size / 2 - 1) + sortedClosePrices.get(size / 2)) / 2;
+		} else {
+			return sortedClosePrices.get(size / 2);
+		}
+	}
+
+	private double calculateStandardDeviation(List<Index> dataList, double mean) {
+		double sumOfSquaredDifferences = dataList.stream().mapToDouble(row -> Math.pow(row.getClose() - mean, 2)).sum();
+		return Math.sqrt(sumOfSquaredDifferences / dataList.size());
 	}
 
 }

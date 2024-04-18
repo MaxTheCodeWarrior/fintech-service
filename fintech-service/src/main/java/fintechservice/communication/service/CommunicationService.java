@@ -1,7 +1,10 @@
 package fintechservice.communication.service;
 
+import java.util.List;
+
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
+import fintechservice.communication.dto.IndexDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.dto.IndexIncomeApyAllDateDto;
 import fintechservice.communication.dto.IndexIncomeApyResponseDto;
@@ -24,9 +27,9 @@ public interface CommunicationService {
 
 	SourceHistoryDto getTimeHistoryForIndex(String index);
 
-	Iterable<String> getAllIndexes();
+	List<IndexDto> getAllIndexes();
 
-	Iterable<IndexHistoryResponseDto> getPeriodBetweenForIndex(IndexRequestDto indexRequestDto);
+	List<IndexHistoryResponseDto> getPeriodBetweenForIndex(IndexRequestDto indexRequestDto);
 
 	Iterable<IndexCloseValueDto> getAllValueCloseBetween(IndexRequestDto indexRequestDto);
 
