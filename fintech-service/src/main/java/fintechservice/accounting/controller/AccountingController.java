@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import fintechservice.accounting.dto.RecoveryInstructionsDto;
 import fintechservice.accounting.dto.UserCreateDto;
 import fintechservice.accounting.dto.UserDto;
-import fintechservice.accounting.dto.UserLoginDto;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
 import fintechservice.accounting.service.AccountingService;
@@ -45,9 +44,9 @@ public class AccountingController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<UserDto> loginUser(@RequestBody UserLoginDto userLoginDto, HttpServletRequest request) {
+	public ResponseEntity<UserDto> loginUser(HttpServletRequest request) {
 		// TODO check if already logged in
-		return accountingService.loginUser(userLoginDto, request) ? ResponseEntity.status(HttpStatus.OK).build()
+		return accountingService.loginUser(request) ? ResponseEntity.status(HttpStatus.OK).build()
 				: ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
 	}
@@ -116,12 +115,18 @@ public class AccountingController {
 		return ResponseEntity.status(HttpStatus.OK).body(userRolesDto);
 	}
 
-	// TODO check this filter
+	//TODO refactor
 	@PutMapping("/user/password") // X-Password variable from header not the body!
-	public ResponseEntity<Void> changeUserPassword(Principal principal,
+	public ResponseEntity<Void> changeUserPassword(HttpServletRequest request,
 			@RequestHeader("X-Password") String newPassword) {
-		accountingService.changeUserPassword(principal.getName(), newPassword);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+		try {
+			String login = request.getUserPrincipal().getName();
+			accountingService.changeUserPassword(login, newPassword);
+			customWebSecurity.logoutUser(request);
+			return ResponseEntity.status(HttpStatus.OK).build();
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
 
 	}
 

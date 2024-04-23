@@ -1,5 +1,6 @@
 package fintechservice.accounting.service;
 
+import java.util.Base64;
 import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
@@ -10,12 +11,12 @@ import org.springframework.stereotype.Service;
 import fintechservice.accounting.dao.AccountingRepository;
 import fintechservice.accounting.dto.UserCreateDto;
 import fintechservice.accounting.dto.UserDto;
-import fintechservice.accounting.dto.UserLoginDto;
 import fintechservice.accounting.dto.UserRoleEnum;
 import fintechservice.accounting.dto.UserRolesDto;
 import fintechservice.accounting.dto.UserUpdateDto;
 import fintechservice.accounting.model.User;
 import fintechservice.exceptions.UserNotFoundException;
+import fintechservice.security.CustomWebSecurity;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -41,21 +42,33 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 	}
 
 	@Override
-	public boolean loginUser(UserLoginDto userLoginDto, HttpServletRequest request) {
-		String login = userLoginDto.getLogin();
-		String password = userLoginDto.getPassword();
-		// Authenticate the user
-		Optional<User> optionalUser = accountingRepository.findById(login)
-				.filter(user -> passwordEncoder.matches(password, user.getPassword()));
-		if (optionalUser.isPresent()) {
-//			// If authentication is successful, store the user in the session
-//			User authenticatedUser = optionalUser.get();
-//			customWebSecurity.loginUser(request, authenticatedUser);
-			return true;
-		}
-		return false;
+	public boolean loginUser(HttpServletRequest request) {
+	    // Extract the Authorization header from the request
+	    String authorizationHeader = request.getHeader("Authorization");
 
+	    if (authorizationHeader != null && authorizationHeader.startsWith("Basic ")) {
+	        // Extract credentials from the Authorization header
+	        String base64Credentials = authorizationHeader.substring("Basic ".length()).trim();
+	        String credentials = new String(Base64.getDecoder().decode(base64Credentials));
+
+	        // Split credentials into username and password
+	        String[] parts = credentials.split(":", 2);
+	        String username = parts[0];
+	        String password = parts[1];
+
+	        // Authenticate the user
+	        Optional<User> optionalUser = accountingRepository.findById(username)
+	                .filter(user -> passwordEncoder.matches(password, user.getPassword()));
+	        
+	        // If authentication is successful, store the user in the session
+	        if (optionalUser.isPresent()) {
+	            CustomWebSecurity.loginUser(request, optionalUser.get());
+	            return true;
+	        }
+	    }
+	    return false;
 	}
+
 
 	/* @formatter:off */
 	/*	The purpose of this method is to send a recovery password link to the email 

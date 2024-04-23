@@ -40,11 +40,7 @@ public class AuthorizationConfiguration {
 				 */
 	
 				// POST {{baseUrl}}/register - for user registration. access to H2.
-				.requestMatchers("/account/register", "/h2-console/**")
-				.permitAll()
-
-				// POST {{baseUrl}}/login - for user login.
-				.requestMatchers(HttpMethod.POST, "/account/login")
+				.requestMatchers("/account/register", "/h2-console/**", "/account/user/password")
 				.permitAll()
 
 				// TODO getRecoveryLink
@@ -60,12 +56,6 @@ public class AuthorizationConfiguration {
 							|| customWebSecurity.checkLogin(a, o).isGranted());
 				})
 
-				// PUT {{baseUrl}}/user/{{user}} - for user update.
-				.requestMatchers(HttpMethod.PUT, "/account/user/{login}")
-				.access((a, o) -> {
-					return customWebSecurity.checkLogin(a, o);
-				})
-
 				// PUT/DELETE {{baseUrl}}/user/{{user}}/role/{{role}} - for adding a deleting role to user.
 				.requestMatchers("/account/user/{login}/role/{role}")
 				.hasRole(UserRoleEnum.ADMINISTRATOR.name())
@@ -73,11 +63,8 @@ public class AuthorizationConfiguration {
 				// PUT {{baseUrl}}/user/password - for changing user password.
 				.requestMatchers(HttpMethod.PUT, "/account/user/password")
 				.access((a, o) -> {
-			        String login = o.getVariables().get("login");
-			        return new AuthorizationDecision(
-			            a.get().getName().equals(login)
-			        );
-			    })
+					return new AuthorizationDecision(a.get().isAuthenticated());
+				})
 				/**	
 				 * Communication
 				 */

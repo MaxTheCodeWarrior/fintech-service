@@ -33,7 +33,7 @@ public class CustomWebSecurity {
 //				.filter(user -> passwordEncoder.matches(password, user.getPassword()));
 //	}
 
-	public void loginUser(HttpServletRequest request, User user) {
+	public static void loginUser(HttpServletRequest request, User user) {
 		HttpSession session = request.getSession(true);
 		session.setAttribute("user", user);
 	}
