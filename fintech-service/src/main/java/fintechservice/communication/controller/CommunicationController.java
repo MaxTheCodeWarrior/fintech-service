@@ -111,8 +111,7 @@ public class CommunicationController {
 	
 	@PostMapping("/data")
 	public ResponseEntity<Iterable<IndexCloseValueDto>> getAllValueCloseBetween(@RequestBody IndexRequestDto indexRequestDto) {
-		// TODO Auto-generated method stub
-		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+		return ResponseEntity.status(HttpStatus.OK).body(communicationService.getAllValueCloseBetween(indexRequestDto));
 	}
 
 	/**

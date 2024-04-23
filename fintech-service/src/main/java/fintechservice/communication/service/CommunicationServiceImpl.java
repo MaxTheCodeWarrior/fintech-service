@@ -7,7 +7,9 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -30,6 +32,7 @@ import fintechservice.communication.dto.SourceLinksRequestDto;
 import fintechservice.communication.dto.SourceRequestDto;
 import fintechservice.communication.dto.SourceResponseDto;
 import fintechservice.communication.model.Index;
+import fintechservice.communication.util.IndexStatisticsCalculator;
 import fintechservice.exceptions.PathInvalidException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -106,31 +109,78 @@ public class CommunicationServiceImpl implements CommunicationService {
 	@Transactional
 	@Override
 	public List<IndexHistoryResponseDto> getPeriodBetweenForIndex(IndexRequestDto indexRequestDto) {
+		List<IndexHistoryResponseDto> response = new ArrayList<>();
+		Map<String, List<IndexHistoryResponseDto>> responseMap = new HashMap<>();
 
-		// TODO JSON parse "yyyy-M-dd" or "yyyy-MM-dd" !
-
-		String indexName = indexRequestDto.getIndexs().get(0);
+		List<String> indexNames = indexRequestDto.getIndexs();
+		String type = indexRequestDto.getType();
+		int quantity = indexRequestDto.getQuantity();
 		LocalDate from = indexRequestDto.getFrom();
 		LocalDate to = indexRequestDto.getTo();
-		List<Index> indexes = communicationRepository.findByIndexBetween(indexName, from, to)
-				.collect(Collectors.toList());
 
-		double max = indexes.stream().mapToDouble(Index::getHigh).max().orElse(0);
-		double mean = indexes.stream().mapToDouble(Index::getClose).average().orElse(0);
-		double median = calculateMedian(indexes);
-		double min = indexes.stream().mapToDouble(Index::getLow).min().orElse(0);
-		double std = calculateStandardDeviation(indexes, mean);
+		// Iterate over the time range
+		while (!from.isAfter(to)) {
+			LocalDate periodStart = from;
+			LocalDate periodEnd = IndexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
 
-		List<IndexHistoryResponseDto> response = new ArrayList<>();
-		response.add(new IndexHistoryResponseDto(from, to, indexName, indexRequestDto.getType(), max, mean, median, min,
-				std));
+			// Calculate statistics for each index within the current period
+			for (String indexName : indexNames) {
+
+				// Retrieve indexes within the current period
+				List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
+						.collect(Collectors.toList());
+
+				// Calculate statistics for the current period
+				IndexHistoryResponseDto periodStatistics = IndexStatisticsCalculator
+						.calculateStatisticsForPeriod(indexes, indexName, periodStart, periodEnd, type, quantity);
+
+				// Add statistics to the response map
+				responseMap.computeIfAbsent(indexName, k -> new ArrayList<>()).add(periodStatistics);
+			}
+			// Move to the next period
+			from = periodEnd.plusDays(1);
+		}
+
+		// Aggregate statistics for each index and add to the response list
+		for (Map.Entry<String, List<IndexHistoryResponseDto>> entry : responseMap.entrySet()) {
+			response.add(IndexStatisticsCalculator.aggregateStatistics(entry.getKey(), entry.getValue()));
+		}
+
 		return response;
 	}
 
 	@Override
 	public Iterable<IndexCloseValueDto> getAllValueCloseBetween(IndexRequestDto indexRequestDto) {
-		// TODO Auto-generated method stub
-		return null;
+		List<IndexCloseValueDto> response = new ArrayList<>();
+
+		// Extract request parameters
+		List<String> indexNames = indexRequestDto.getIndexs();
+		String type = indexRequestDto.getType();
+		int quantity = indexRequestDto.getQuantity();
+		LocalDate from = indexRequestDto.getFrom();
+		LocalDate to = indexRequestDto.getTo();
+
+		// Iterate over the time range
+		while (!from.isAfter(to)) {
+			LocalDate periodStart = from;
+			LocalDate periodEnd = IndexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
+
+			// Calculate statistics for each index within the current period
+			for (String indexName : indexNames) {
+				// Retrieve indexes within the current period
+				List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
+						.collect(Collectors.toList());
+				// Calculate statistics for the current period
+				IndexCloseValueDto subPeriodQuotes = IndexStatisticsCalculator.calculateSubPeriodQuotes(indexes,
+						indexName, periodStart, periodEnd, type, quantity);
+				// Add sub-period quotes to the response list
+				response.add(subPeriodQuotes);
+			}
+			// Move to the next period
+			from = periodEnd.plusDays(1);
+		}
+
+		return response;
 	}
 
 	@Override
@@ -175,19 +225,50 @@ public class CommunicationServiceImpl implements CommunicationService {
 		return 0;
 	}
 
-	private double calculateMedian(List<Index> dataList) {
-		List<Double> sortedClosePrices = dataList.stream().map(Index::getClose).sorted().collect(Collectors.toList());
-		int size = sortedClosePrices.size();
-		if (size % 2 == 0) {
-			return (sortedClosePrices.get(size / 2 - 1) + sortedClosePrices.get(size / 2)) / 2;
-		} else {
-			return sortedClosePrices.get(size / 2);
-		}
-	}
-
-	private double calculateStandardDeviation(List<Index> dataList, double mean) {
-		double sumOfSquaredDifferences = dataList.stream().mapToDouble(row -> Math.pow(row.getClose() - mean, 2)).sum();
-		return Math.sqrt(sumOfSquaredDifferences / dataList.size());
-	}
+//	private IndexHistoryResponseDto calculateStatisticsForPeriod(String indexName, LocalDate periodStart,
+//			LocalDate periodEnd) {
+//
+//		Stream<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd);
+//
+//		double max = indexes.mapToDouble(Index::getHigh).max().orElse(0);
+//		double mean = indexes.mapToDouble(Index::getClose).average().orElse(0);
+//		double median = calculateMedian(indexes.map(Index::getClose).sorted().collect(Collectors.toList()));
+//		double min = indexes.mapToDouble(Index::getLow).min().orElse(0);
+//		double std = calculateStandardDeviation(
+//				indexes.mapToDouble(Index::getClose).boxed().collect(Collectors.toList()), mean);
+//
+//		return new IndexHistoryResponseDto(periodStart, periodEnd, indexName, "days", max, mean, median, min, std);
+//	}
+//
+//	private double calculateMedian(List<Double> sortedClosePrices) {
+//		int size = sortedClosePrices.size();
+//		if (size % 2 == 0) {
+//			return (sortedClosePrices.get(size / 2 - 1) + sortedClosePrices.get(size / 2)) / 2;
+//		} else {
+//			return sortedClosePrices.get(size / 2);
+//		}
+//	}
+//
+//	private double calculateStandardDeviation(List<Double> dataList, double mean) {
+//		double sumOfSquaredDifferences = dataList.stream().mapToDouble(value -> Math.pow(value - mean, 2)).sum();
+//		int count = dataList.size();
+//		return Math.sqrt(sumOfSquaredDifferences / count);
+//	}
+//
+//	private LocalDate calculatePeriodEnd(LocalDate periodStart, String type, int quantity, LocalDate endDate) {
+//		switch (type) {
+//		case "days":
+//			return periodStart.plusDays(quantity).isBefore(endDate) ? periodStart.plusDays(quantity) : endDate;
+//		case "weeks":
+//			return periodStart.plusWeeks(quantity).isBefore(endDate) ? periodStart.plusWeeks(quantity) : endDate;
+//		case "months":
+//			return periodStart.plusMonths(quantity).isBefore(endDate) ? periodStart.plusMonths(quantity) : endDate;
+//		case "years":
+//			return periodStart.plusYears(quantity).isBefore(endDate) ? periodStart.plusYears(quantity) : endDate;
+//		// TODO check if needs more
+//		default:
+//			throw new IllegalArgumentException("Unsupported period type: " + type);
+//		}
+//	}
 
 }
