@@ -10,7 +10,7 @@ public interface AccountingService {
 
 	UserDto registerUser(UserCreateDto userCreateDto);
 
-	boolean loginUser(HttpServletRequest request);
+	UserDto loginUser(HttpServletRequest request);
 
 	void recoveryPasswordByLink(String url);
 

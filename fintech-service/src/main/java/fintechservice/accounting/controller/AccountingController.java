@@ -42,13 +42,15 @@ public class AccountingController {
 		return userDto != null ? ResponseEntity.status(HttpStatus.OK).body(userDto)
 				: ResponseEntity.status(HttpStatus.CONFLICT).build();
 	}
+	
+
 
 	@PostMapping("/login")
 	public ResponseEntity<UserDto> loginUser(HttpServletRequest request) {
 		// TODO check if already logged in
-		return accountingService.loginUser(request) ? ResponseEntity.status(HttpStatus.OK).build()
-				: ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
+		UserDto userDto = accountingService.loginUser(request);
+		return userDto == null ? ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+				: ResponseEntity.status(HttpStatus.OK).body(userDto);
 	}
 
 	@DeleteMapping("/user/{user}")
@@ -116,7 +118,7 @@ public class AccountingController {
 	}
 
 	//TODO refactor
-	@PutMapping("/user/password") // X-Password variable from header not the body!
+	@PutMapping("/password")
 	public ResponseEntity<Void> changeUserPassword(HttpServletRequest request,
 			@RequestHeader("X-Password") String newPassword) {
 		try {
@@ -129,5 +131,6 @@ public class AccountingController {
 		}
 
 	}
+
 
 }

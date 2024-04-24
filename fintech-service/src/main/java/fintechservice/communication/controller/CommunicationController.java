@@ -42,6 +42,7 @@ public class CommunicationController {
 
 	@PostMapping("/index/{index}/{path}")
 	public ResponseEntity<Boolean> addHistoryWithFile(@PathVariable String index, @PathVariable String path) {
+		
 		boolean check = communicationService.addHistoryWithFile(index, path);
 		return ResponseEntity.status(HttpStatus.OK).body(check);
 	}

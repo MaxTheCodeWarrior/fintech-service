@@ -41,34 +41,34 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 		return modelMapper.map(user, UserDto.class);
 	}
 
+	//TODO refactor
 	@Override
-	public boolean loginUser(HttpServletRequest request) {
-	    // Extract the Authorization header from the request
-	    String authorizationHeader = request.getHeader("Authorization");
+	public UserDto loginUser(HttpServletRequest request) {
+		// Extract the Authorization header from the request
+		String authorizationHeader = request.getHeader("Authorization");
 
-	    if (authorizationHeader != null && authorizationHeader.startsWith("Basic ")) {
-	        // Extract credentials from the Authorization header
-	        String base64Credentials = authorizationHeader.substring("Basic ".length()).trim();
-	        String credentials = new String(Base64.getDecoder().decode(base64Credentials));
+		if (authorizationHeader != null && authorizationHeader.startsWith("Basic ")) {
+			// Extract credentials from the Authorization header
+			String base64Credentials = authorizationHeader.substring("Basic ".length()).trim();
+			String credentials = new String(Base64.getDecoder().decode(base64Credentials));
 
-	        // Split credentials into username and password
-	        String[] parts = credentials.split(":", 2);
-	        String username = parts[0];
-	        String password = parts[1];
+			// Split credentials into username and password
+			String[] parts = credentials.split(":", 2);
+			String username = parts[0];
+			String password = parts[1];
 
-	        // Authenticate the user
-	        Optional<User> optionalUser = accountingRepository.findById(username)
-	                .filter(user -> passwordEncoder.matches(password, user.getPassword()));
-	        
-	        // If authentication is successful, store the user in the session
-	        if (optionalUser.isPresent()) {
-	            CustomWebSecurity.loginUser(request, optionalUser.get());
-	            return true;
-	        }
-	    }
-	    return false;
+			// Authenticate the user
+			Optional<User> optionalUser = accountingRepository.findById(username)
+					.filter(user -> passwordEncoder.matches(password, user.getPassword()));
+
+			// If authentication is successful, store the user in the session
+			if (optionalUser.isPresent()) {
+				CustomWebSecurity.loginUser(request, optionalUser.get());
+				return modelMapper.map(optionalUser.get(), UserDto.class);
+			}
+		}
+		return null;
 	}
-
 
 	/* @formatter:off */
 	/*	The purpose of this method is to send a recovery password link to the email 
@@ -81,8 +81,6 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 	 * actual URL of the application.
 	 */
 	/* @formatter:on */
-
-	// TODO Login method!
 
 	@Override
 	public void recoveryPasswordByLink(String email) {
@@ -162,6 +160,8 @@ public class AccountingServiceImpl implements AccountingService, CommandLineRunn
 									user.getRoles().add(UserRoleEnum.ADMINISTRATOR);
 										accountingRepository.save(user);
 		}
+		
+		
 		
 	}
 

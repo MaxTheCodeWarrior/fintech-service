@@ -1,9 +1,8 @@
 package fintechservice.communication.service;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -46,8 +45,9 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 	@Override
 	public boolean addHistoryWithFile(String name, String path) throws PathInvalidException {
-		if (Files.exists(Paths.get(path)) && Files.isRegularFile(Paths.get(path))) {
-			try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+		File file = new File(path);
+		if (file.exists() && file.isFile()) {
+			try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 				// Skip the header line
 				br.readLine();
 				// Read and insert each line of the CSV file
@@ -224,6 +224,8 @@ public class CommunicationServiceImpl implements CommunicationService {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+
+
 
 //	private IndexHistoryResponseDto calculateStatisticsForPeriod(String indexName, LocalDate periodStart,
 //			LocalDate periodEnd) {

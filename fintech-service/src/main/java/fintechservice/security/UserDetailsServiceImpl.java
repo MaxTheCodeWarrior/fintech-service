@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
+	
 	final AccountingRepository accountingRepository;
 
 	@Override

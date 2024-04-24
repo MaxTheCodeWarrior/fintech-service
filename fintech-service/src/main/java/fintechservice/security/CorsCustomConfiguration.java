@@ -6,16 +6,16 @@ import java.util.Collections;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 public class CorsCustomConfiguration {
 
 	@Bean
-	public CorsFilter corsFilter() {
+	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
-		corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
+		corsConfiguration.setAllowedHeaders(Arrays.asList("*", "X-Password"));
 		corsConfiguration.setAllowedOriginPatterns(Collections.singletonList("*"));
 		corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		corsConfiguration.setAllowCredentials(true);
@@ -24,6 +24,6 @@ public class CorsCustomConfiguration {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", corsConfiguration);
 
-		return new CorsFilter(source);
+		return source;
 	}
 }
