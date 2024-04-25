@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
-import fintechservice.communication.dto.IndexDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.dto.IndexIncomeApyAllDateDto;
 import fintechservice.communication.dto.IndexIncomeApyResponseDto;
@@ -87,7 +86,7 @@ public class CommunicationController {
 
 	// Returns all indexes that can be used in the application.
 	@GetMapping("/index")
-	public ResponseEntity<List<IndexDto>> getAllIndexes() {
+	public ResponseEntity<List<String>> getAllIndexes() {
 		return ResponseEntity.status(HttpStatus.OK).body(communicationService.getAllIndexes());
 	}
 

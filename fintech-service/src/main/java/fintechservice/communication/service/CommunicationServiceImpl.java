@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import fintechservice.communication.dao.CommunicationRepository;
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
-import fintechservice.communication.dto.IndexDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.dto.IndexIncomeApyAllDateDto;
 import fintechservice.communication.dto.IndexIncomeApyResponseDto;
@@ -100,10 +99,10 @@ public class CommunicationServiceImpl implements CommunicationService {
 		return new SourceHistoryDto(index, from, to);
 	}
 
+	@Transactional
 	@Override
-	public List<IndexDto> getAllIndexes() {
-		return communicationRepository.findAll().stream().map(i -> modelMapper.map(i, IndexDto.class))
-				.collect(Collectors.toList());
+	public List<String> getAllIndexes() {
+		return communicationRepository.getAllIndexList().collect(Collectors.toList());
 	}
 
 	@Transactional
@@ -224,8 +223,6 @@ public class CommunicationServiceImpl implements CommunicationService {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
-
 
 //	private IndexHistoryResponseDto calculateStatisticsForPeriod(String indexName, LocalDate periodStart,
 //			LocalDate periodEnd) {

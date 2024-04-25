@@ -1,7 +1,6 @@
 package fintechservice.communication.dao;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -23,7 +22,7 @@ public interface CommunicationRepository extends JpaRepository<Index, Long> {
 	Stream<Index> findAllByIndex(String index);
 
 	@Query("SELECT DISTINCT i.index FROM Index i")
-	HashSet<String> getAllIndexList();
+	Stream<String> getAllIndexList();
 
 	@Query("SELECT MIN(i.date) FROM Index i WHERE i.index = :indexName")
 	LocalDate findMinDateInIndex(@Param("indexName") String indexName);
