@@ -2,6 +2,7 @@ package fintechservice.communication.service;
 
 import java.util.List;
 
+import fintechservice.communication.dto.CorrelationCoefficientDto;
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
@@ -40,7 +41,7 @@ public interface CommunicationService {
 
 	Iterable<IndexIncomeIrrResponseDto> calcIncomeWithIrr(IndexRequestDto indexRequestDto);
 
-	String calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto);
+	CorrelationCoefficientDto calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto);
 
 	boolean deleteAllHistoryForCompany();
 

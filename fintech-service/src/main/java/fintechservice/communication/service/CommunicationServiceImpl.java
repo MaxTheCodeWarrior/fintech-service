@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import fintechservice.communication.dao.CommunicationRepository;
+import fintechservice.communication.dto.CorrelationCoefficientDto;
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexCorrelationRequestDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
@@ -41,6 +42,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 	final CommunicationRepository communicationRepository;
 	final ModelMapper modelMapper;
+	final IndexStatisticsCalculator indexStatisticsCalculator;
 
 	@Override
 	public boolean addHistoryWithFile(String name, String path) throws PathInvalidException {
@@ -120,7 +122,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 		// Iterate over the time range
 		while (!from.isAfter(to)) {
 			LocalDate periodStart = from;
-			LocalDate periodEnd = IndexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
+			LocalDate periodEnd = indexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
 
 			// Calculate statistics for each index within the current period
 			for (String indexName : indexNames) {
@@ -130,7 +132,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 						.collect(Collectors.toList());
 
 				// Calculate statistics for the current period
-				IndexHistoryResponseDto periodStatistics = IndexStatisticsCalculator
+				IndexHistoryResponseDto periodStatistics = indexStatisticsCalculator
 						.calculateStatisticsForPeriod(indexes, indexName, periodStart, periodEnd, type, quantity);
 
 				// Add statistics to the response map
@@ -142,7 +144,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 		// Aggregate statistics for each index and add to the response list
 		for (Map.Entry<String, List<IndexHistoryResponseDto>> entry : responseMap.entrySet()) {
-			response.add(IndexStatisticsCalculator.aggregateStatistics(entry.getKey(), entry.getValue()));
+			response.add(indexStatisticsCalculator.aggregateStatistics(entry.getKey(), entry.getValue()));
 		}
 
 		return response;
@@ -162,7 +164,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 		// Iterate over the time range
 		while (!from.isAfter(to)) {
 			LocalDate periodStart = from;
-			LocalDate periodEnd = IndexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
+			LocalDate periodEnd = indexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
 
 			// Calculate statistics for each index within the current period
 			for (String indexName : indexNames) {
@@ -170,7 +172,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 				List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
 						.collect(Collectors.toList());
 				// Calculate statistics for the current period
-				IndexCloseValueDto subPeriodQuotes = IndexStatisticsCalculator.calculateSubPeriodQuotes(indexes,
+				IndexCloseValueDto subPeriodQuotes = indexStatisticsCalculator.calculateSubPeriodQuotes(indexes,
 						indexName, periodStart, periodEnd, type, quantity);
 				// Add sub-period quotes to the response list
 				response.add(subPeriodQuotes);
@@ -205,11 +207,41 @@ public class CommunicationServiceImpl implements CommunicationService {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	@Transactional
 	@Override
-	public String calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto) {
-		// TODO Auto-generated method stub
-		return null;
+	public CorrelationCoefficientDto calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto) {
+		List<String> indexNames = indexCorrelationRequestDto.getIndexs();
+		LocalDate periodStart = indexCorrelationRequestDto.getFrom();
+		LocalDate periodEnd = indexCorrelationRequestDto.getTo();
+
+		List<Index> firstIndex = communicationRepository.findByIndexBetween(indexNames.get(0), periodStart, periodEnd)
+				.collect(Collectors.toList());
+
+		List<Index> secondIndex = communicationRepository.findByIndexBetween(indexNames.get(1), periodStart, periodEnd)
+				.collect(Collectors.toList());
+
+		// Calculate correlation coefficient
+		double correlationCoefficient = indexStatisticsCalculator.calculateCorrelationCoefficient(firstIndex,
+				secondIndex);
+
+		// Determine correlation description based on correlation coefficient
+		String correlationDescription = indexStatisticsCalculator
+				.determineCorrelationDescription(correlationCoefficient);
+
+		// Calculate profit and annual yield for each stock
+		List<Double> profits = indexStatisticsCalculator.calculateProfits(firstIndex, secondIndex);
+		List<Double> annualYields = indexStatisticsCalculator.calculateAnnualYields(firstIndex, secondIndex);
+
+		// Calculate minimum and maximum yields
+		double minProfit = profits.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
+		double maxProfit = profits.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+		double minAnnualYield = annualYields.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
+		double maxAnnualYield = annualYields.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+
+		// Display the results
+		CorrelationCoefficientDto correlationDto = new CorrelationCoefficientDto(correlationCoefficient,
+				correlationDescription, minProfit, maxProfit, minAnnualYield, maxAnnualYield);
+		return correlationDto;
 	}
 
 	@Override

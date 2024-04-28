@@ -172,10 +172,8 @@ public class CommunicationController {
 	
 	@PostMapping("/index/correlation")
 	public ResponseEntity<String> calcCorrelation(@RequestBody IndexCorrelationRequestDto indexCorrelationRequestDto) {
-		// TODO Auto-generated method stub
-		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+		return  ResponseEntity.status(HttpStatus.OK).body(communicationService.calcCorrelation(indexCorrelationRequestDto).getCorrelationDescription());
 	}
-	
 	/**
 	 * @param 
 	 * Deletes the specified stock by index from the application.

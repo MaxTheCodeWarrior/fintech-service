@@ -1,18 +1,23 @@
 package fintechservice.communication.util;
 
 import java.time.LocalDate;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Component;
+
+import fintechservice.communication.dto.CorrelationDescriptionEnum;
 import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.model.Index;
 import fintechservice.exceptions.DateOutOfRangeException;
 
+@Component
 public class IndexStatisticsCalculator {
 
-	public static LocalDate calculatePeriodEnd(LocalDate periodStart, String type, int quantity, LocalDate endDate) {
+	public LocalDate calculatePeriodEnd(LocalDate periodStart, String type, int quantity, LocalDate endDate) {
 		switch (type) {
 		case "days":
 			return periodStart.plusDays(quantity).isBefore(endDate) ? periodStart.plusDays(quantity) : endDate;
@@ -27,7 +32,7 @@ public class IndexStatisticsCalculator {
 		}
 	}
 
-	public static IndexHistoryResponseDto calculateStatisticsForPeriod(List<Index> indexes, String indexName,
+	public IndexHistoryResponseDto calculateStatisticsForPeriod(List<Index> indexes, String indexName,
 			LocalDate periodStart, LocalDate periodEnd, String type, int quantity) {
 		double max = indexes.stream().mapToDouble(Index::getHigh).max().orElse(0);
 		double mean = indexes.stream().mapToDouble(Index::getClose).average().orElse(0);
@@ -41,7 +46,7 @@ public class IndexStatisticsCalculator {
 				min, std);
 	}
 
-	public static double calculateMedian(List<Double> sortedClosePrices) {
+	private double calculateMedian(List<Double> sortedClosePrices) {
 		int size = sortedClosePrices.size();
 		if (size == 0) {
 			throw new DateOutOfRangeException();
@@ -54,13 +59,13 @@ public class IndexStatisticsCalculator {
 
 	}
 
-	public static double calculateStandardDeviation(List<Double> dataList, double mean) {
+	private double calculateStandardDeviation(List<Double> dataList, double mean) {
 		double sumOfSquaredDifferences = dataList.stream().mapToDouble(value -> Math.pow(value - mean, 2)).sum();
 		int count = dataList.size();
 		return Math.sqrt(sumOfSquaredDifferences / count);
 	}
 
-	public static IndexHistoryResponseDto aggregateStatistics(String indexName,
+	public IndexHistoryResponseDto aggregateStatistics(String indexName,
 			List<IndexHistoryResponseDto> periodStatisticsList) {
 		double max = periodStatisticsList.stream().mapToDouble(IndexHistoryResponseDto::getMax).max().orElse(0);
 		double mean = periodStatisticsList.stream().mapToDouble(IndexHistoryResponseDto::getMean).average().orElse(0);
@@ -73,8 +78,8 @@ public class IndexStatisticsCalculator {
 				indexName, periodStatisticsList.get(0).getType(), max, mean, median, min, std);
 	}
 
-	public static IndexCloseValueDto calculateSubPeriodQuotes(List<Index> indexes, String indexName,
-			LocalDate periodStart, LocalDate periodEnd, String type, int quantity) {
+	public IndexCloseValueDto calculateSubPeriodQuotes(List<Index> indexes, String indexName, LocalDate periodStart,
+			LocalDate periodEnd, String type, int quantity) {
 		// Initialize variables to store sub-period quotes
 		double startClose = Double.MAX_VALUE;
 		double endClose = Double.MIN_VALUE;
@@ -96,6 +101,102 @@ public class IndexStatisticsCalculator {
 		return new IndexCloseValueDto(periodStart, periodEnd, indexName, quantity + " " + type, periodStart, periodEnd,
 				startClose, endClose, endClose - startClose, listClose);
 
+	}
+
+	public List<Double> calculateProfits(List<Index> firstIndex, List<Index> secondIndex) {
+		List<Double> profits = new ArrayList<>();
+
+		if (firstIndex.size() != secondIndex.size()) { // Assuming both lists have the same size
+			throw new IllegalArgumentException();
+		}
+
+		int n = firstIndex.size();
+
+		for (int i = 0; i < n; i++) {
+			double profit = secondIndex.get(i).getClose() - secondIndex.get(i).getOpen()
+					- (firstIndex.get(i).getClose() - firstIndex.get(i).getOpen());
+			profits.add(profit);
+		}
+
+		return profits;
+	}
+
+	public List<Double> calculateAnnualYields(List<Index> firstIndex, List<Index> secondIndex) {
+		List<Double> annualYields = new ArrayList<>();
+
+		if (firstIndex.size() != secondIndex.size()) { // Assuming both lists have the same size
+			throw new IllegalArgumentException();
+		}
+
+		int n = firstIndex.size();
+
+		for (int i = 0; i < n; i++) {
+			double yield = ((secondIndex.get(i).getClose() - secondIndex.get(i).getOpen())
+					- (firstIndex.get(i).getClose() - firstIndex.get(i).getOpen())) / firstIndex.get(i).getOpen()
+					* 100.0;
+			annualYields.add(yield);
+		}
+
+		return annualYields;
+
+	}
+
+	public double calculateCorrelationCoefficient(List<Index> firstIndex, List<Index> secondIndex) {
+		if (firstIndex.size() != secondIndex.size()) { // Assuming both lists have the same size
+			throw new DateOutOfRangeException();
+		}
+		int n = firstIndex.size();
+		double sumXY = 0.0;
+		double sumX = 0.0;
+		double sumY = 0.0;
+		double sumXSquare = 0.0;
+		double sumYSquare = 0.0;
+
+		for (int i = 0; i < n; i++) {
+			double x = firstIndex.get(i).getClose() - firstIndex.get(i).getOpen();
+			double y = secondIndex.get(i).getClose() - secondIndex.get(i).getOpen();
+
+			sumXY += x * y;
+			sumX += x;
+			sumY += y;
+			sumXSquare += x * x;
+			sumYSquare += y * y;
+		}
+
+		double correlationCoefficient = (n * sumXY - sumX * sumY)
+				/ Math.sqrt((n * sumXSquare - sumX * sumX) * (n * sumYSquare - sumY * sumY));
+
+		return correlationCoefficient;
+	}
+
+	public String determineCorrelationDescription(double correlationCoefficient) {
+		if (correlationCoefficient == 1.0) {
+			return CorrelationDescriptionEnum.PERFECT_POSITIVE.getDescription();
+		} else if (correlationCoefficient > 0.9) {
+			return CorrelationDescriptionEnum.VERY_STRONG_POSITIVE.getDescription();
+		} else if (correlationCoefficient > 0.7) {
+			return CorrelationDescriptionEnum.STRONG_POSITIVE.getDescription();
+		} else if (correlationCoefficient > 0.5) {
+			return CorrelationDescriptionEnum.MODERATE_POSITIVE.getDescription();
+		} else if (correlationCoefficient > 0.3) {
+			return CorrelationDescriptionEnum.WEAK_POSITIVE.getDescription();
+		} else if (correlationCoefficient > 0) {
+			return CorrelationDescriptionEnum.NEGLIGIBLE_POSITIVE.getDescription();
+		} else if (correlationCoefficient == -1.0) {
+			return CorrelationDescriptionEnum.PERFECT_NEGATIVE.getDescription();
+		} else if (correlationCoefficient < -0.9) {
+			return CorrelationDescriptionEnum.VERY_STRONG_NEGATIVE.getDescription();
+		} else if (correlationCoefficient < -0.7) {
+			return CorrelationDescriptionEnum.STRONG_NEGATIVE.getDescription();
+		} else if (correlationCoefficient < -0.5) {
+			return CorrelationDescriptionEnum.MODERATE_NEGATIVE.getDescription();
+		} else if (correlationCoefficient < -0.3) {
+			return CorrelationDescriptionEnum.WEAK_NEGATIVE.getDescription();
+		} else if (correlationCoefficient < 0) {
+			return CorrelationDescriptionEnum.NEGLIGIBLE_NEGATIVE.getDescription();
+		} else {
+			return CorrelationDescriptionEnum.NO_CORRELATION.getDescription();
+		}
 	}
 
 }
