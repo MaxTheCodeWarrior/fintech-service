@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/communication")  // ATTENTION : Some methods differ from the given API !
+@RequestMapping("/communication")  
 public class CommunicationController {
 
 	final CommunicationService communicationService;

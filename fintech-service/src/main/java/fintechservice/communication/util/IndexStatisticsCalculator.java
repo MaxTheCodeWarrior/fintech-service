@@ -1,8 +1,10 @@
 package fintechservice.communication.util;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,23 +82,31 @@ public class IndexStatisticsCalculator {
 
 	public IndexCloseValueDto calculateSubPeriodQuotes(List<Index> indexes, String indexName, LocalDate periodStart,
 			LocalDate periodEnd, String type, int quantity) {
-		// Initialize variables to store sub-period quotes
-		double startClose = Double.MAX_VALUE;
-		double endClose = Double.MIN_VALUE;
+
+		double startClose = 0;
+		double endClose = 0;
 		List<Double> listClose = new ArrayList<>();
 
 		// Iterate over the indexes within the current period
 		for (Index index : indexes) {
 
-			double closeValue = index.getClose();
+			// Formating double to 0.00
+			BigDecimal bd = new BigDecimal(index.getClose()).setScale(2, RoundingMode.HALF_UP);
+
+			double closeValue = bd.doubleValue();
 
 			// Update startClose and endClose values
-			startClose = Math.min(startClose, closeValue);
-			endClose = Math.max(endClose, closeValue);
+			if (startClose == 0) {
+				startClose = closeValue;
+			}
+			endClose = closeValue;
 
 			// Add close value to the list of close values
 			listClose.add(closeValue);
+
 		}
+		// Reverse the list
+		Collections.reverse(listClose);
 
 		return new IndexCloseValueDto(periodStart, periodEnd, indexName, quantity + " " + type, periodStart, periodEnd,
 				startClose, endClose, endClose - startClose, listClose);

@@ -150,6 +150,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 		return response;
 	}
 
+	@Transactional
 	@Override
 	public Iterable<IndexCloseValueDto> getAllValueCloseBetween(IndexRequestDto indexRequestDto) {
 		List<IndexCloseValueDto> response = new ArrayList<>();
@@ -172,13 +173,19 @@ public class CommunicationServiceImpl implements CommunicationService {
 				List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
 						.collect(Collectors.toList());
 				// Calculate statistics for the current period
+				
+				
+				
 				IndexCloseValueDto subPeriodQuotes = indexStatisticsCalculator.calculateSubPeriodQuotes(indexes,
 						indexName, periodStart, periodEnd, type, quantity);
+				
+				
+				
 				// Add sub-period quotes to the response list
 				response.add(subPeriodQuotes);
 			}
 			// Move to the next period
-			from = periodEnd.plusDays(1);
+			from = periodEnd.plusDays(1); // Move to the day after the period end to include it
 		}
 
 		return response;
@@ -207,6 +214,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Transactional
 	@Override
 	public CorrelationCoefficientDto calcCorrelation(IndexCorrelationRequestDto indexCorrelationRequestDto) {
