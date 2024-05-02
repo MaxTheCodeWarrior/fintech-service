@@ -15,8 +15,8 @@ public class IndexRequestWithAmountFieldDto {
 	// stock indexes
 	private List<String> indexs;
 
-	private List<Integer> amount;
-	
+	private List<Double> amount;
+
 	// start date of history
 	private LocalDate from;
 

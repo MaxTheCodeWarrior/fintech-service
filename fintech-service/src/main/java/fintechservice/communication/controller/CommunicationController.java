@@ -122,8 +122,11 @@ public class CommunicationController {
 	
 	@PostMapping("/index/sum")
 	public ResponseEntity<IndexHistoryResponseDto> calcSumPackage(@RequestBody IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
-		// TODO Auto-generated method stub
-		return  ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+		//TODO show the message 
+		if(indexRequestWithAmountFieldDto.getAmount().size() < indexRequestWithAmountFieldDto.getIndexs().size()) {
+			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).build();
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(communicationService.calcSumPackage(indexRequestWithAmountFieldDto));
 	}
 	
 	/**
