@@ -52,10 +52,10 @@ public class IndexStatisticsCalculator {
 				.orElse(0);
 		
 		double median = calculateMedian(indexes.stream()
-								.mapToDouble(Index::getClose)
-								.boxed()
-								.collect(Collectors.toList())
-								);
+				.mapToDouble(Index::getClose)
+				.boxed()
+				.collect(Collectors.toList())
+				);
 		
 		double min = indexes.stream()
 				.mapToDouble(Index::getLow)
@@ -63,10 +63,10 @@ public class IndexStatisticsCalculator {
 				.orElse(0);
 		
 		double std = calculateStandardDeviation(indexes.stream()
-										.mapToDouble(Index::getClose)
-										.boxed()
-										.collect(Collectors.toList())
-										, mean);
+				.mapToDouble(Index::getClose)
+				.boxed()
+				.collect(Collectors.toList())
+				, mean);
 
 		return new IndexHistoryResponseDto(periodStart, periodEnd, indexName, quantity + " " + type, max, mean, median,
 				min, std);

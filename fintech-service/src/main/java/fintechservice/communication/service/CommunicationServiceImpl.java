@@ -231,53 +231,60 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 	@Transactional
 	@Override
-	public List<IndexHistoryResponseDto> calcSumPackageWithoutAggreagtion(IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
-	    List<IndexHistoryResponseDto> aggregatedStatisticsList = new ArrayList<>();
+	public List<IndexHistoryResponseDto> calcSumPackageWithoutAggreagtion(
+			IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
+		
+		List<IndexHistoryResponseDto> aggregatedStatisticsList = new ArrayList<>();
 
-	    List<String> indexNames = indexRequestWithAmountFieldDto.getIndexs();
-	    String type = indexRequestWithAmountFieldDto.getType();
-	    int quantity = indexRequestWithAmountFieldDto.getQuantity();
-	    LocalDate from = indexRequestWithAmountFieldDto.getFrom();
-	    LocalDate to = indexRequestWithAmountFieldDto.getTo();
-	    List<Double> amounts = indexRequestWithAmountFieldDto.getAmount();
+		List<String> indexNames = indexRequestWithAmountFieldDto.getIndexs();
+		String type = indexRequestWithAmountFieldDto.getType();
+		int quantity = indexRequestWithAmountFieldDto.getQuantity();
+		LocalDate from = indexRequestWithAmountFieldDto.getFrom();
+		LocalDate to = indexRequestWithAmountFieldDto.getTo();
+		List<Double> amounts = indexRequestWithAmountFieldDto.getAmount();
+		
+		Map<String, Double> purshasedPricesForIndexes = new HashMap<>();
+		
+		// Iterate over the time range
+		while (!from.isAfter(to)) {
 
-	    // Iterate over the time range
-	    while (!from.isAfter(to)) {
-	        LocalDate periodStart = from;
-	        LocalDate periodEnd = indexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
+			LocalDate periodStart = from;
+			LocalDate periodEnd = indexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
 
-	        // Iterate over each indexName to calculate statistics for each
-	        List<IndexHistoryResponseDto> periodStatisticsList = new ArrayList<>();
-	        for (int i = 0; i < indexNames.size(); i++) {
-	            String indexName = indexNames.get(i);
-	            Double amount = amounts.get(i);
+			// Iterate over each indexName to calculate statistics for each
+			List<IndexHistoryResponseDto> periodStatisticsList = new ArrayList<>();
+			
 
-	            // Retrieve indexes for the current indexName within the current period
-	            List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
-	                    .collect(Collectors.toList());
+			for (int i = 0; i < indexNames.size(); i++) {
+				String indexName = indexNames.get(i);
 
-	            // Calculate statistics for the current indexName and add to the list
-	            IndexHistoryResponseDto periodStatistics = indexStatisticsCalculator
-	                    .calculateStatisticsForPeriodWithAmount(indexes, indexName, periodStart, periodEnd,
-	                            type, quantity, amount);
+				// Retrieve indexes for the current indexName within the current period
+				List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
+						.collect(Collectors.toList());
+				
+				// For getting the amount of indexes that was purchased in package
+				purshasedPricesForIndexes.putIfAbsent(indexName, amounts.get(i) / indexes.get(0).getClose());
 
-	            periodStatisticsList.add(periodStatistics);
-	        }
+				// Calculate statistics for the current indexName and add to the list
+				IndexHistoryResponseDto periodStatistics = indexStatisticsCalculator
+						.calculateStatisticsForPeriodWithAmount(indexes, indexName, periodStart, periodEnd, type,
+								quantity, purshasedPricesForIndexes.get(indexName));
 
-	        // Aggregate statistics for the current period and add to the aggregated list
-	        IndexHistoryResponseDto aggregatedStatistics = indexStatisticsCalculator
-	                .aggregateStatistics("Package for: " + String.join(", ", indexNames), periodStatisticsList);
-	        aggregatedStatisticsList.add(aggregatedStatistics);
+				periodStatisticsList.add(periodStatistics);
+			}
 
-	        // Move to the next period
-	        from = periodEnd.plusDays(1);
-	    }
+			// Aggregate statistics for the current period and add to the aggregated list
+			IndexHistoryResponseDto aggregatedStatistics = indexStatisticsCalculator
+					.aggregateStatistics("Package for: " + String.join(", ", indexNames), periodStatisticsList);
+			aggregatedStatisticsList.add(aggregatedStatistics);
 
-	    return aggregatedStatisticsList;
+			// Move to the next period
+			from = periodEnd.plusDays(1);
+		}
+
+		return aggregatedStatisticsList;
 	}
 
-
-	
 	@Override
 	public IndexIncomeApyResponseDto calcIncomeWithApy(IndexRequestDto indexRequestDto) {
 
@@ -294,7 +301,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 	@Override
 	public Iterable<IndexIncomeIrrResponseDto> calcIncomeWithIrr(IndexRequestDto indexRequestDto) {
-		
+
 		// TODO Auto-generated method stub
 		return null;
 	}
