@@ -15,6 +15,7 @@ import fintechservice.communication.dto.IndexCloseValueDto;
 import fintechservice.communication.dto.IndexHistoryResponseDto;
 import fintechservice.communication.model.Index;
 import fintechservice.exceptions.DateOutOfRangeException;
+
 /* @formatter:off */
 @Component
 public class IndexStatisticsCalculator {
@@ -163,7 +164,7 @@ public class IndexStatisticsCalculator {
 											.collect(Collectors.toList())
 											, mean);
 		
-		return new IndexHistoryResponseDto(periodStatisticsList.get(0).getFrom(), periodStatisticsList.get(0).getTo(),
+		return new IndexHistoryResponseDto(periodStatisticsList.get(0).getFrom(), periodStatisticsList.get(periodStatisticsList.size()-1).getTo(),
 				indexName, periodStatisticsList.get(0).getType(), max, mean, median, min, std);
 	}
 
