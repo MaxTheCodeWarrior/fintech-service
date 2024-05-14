@@ -73,44 +73,37 @@ public class IndexStatisticsCalculator {
 	}
 
 	public IndexHistoryResponseDto calculateStatisticsForPeriodWithAmount(List<Index> indexes, String indexName,
-			LocalDate periodStart, LocalDate periodEnd, String type, int quantity, double amount) {
+	        LocalDate periodStart, LocalDate periodEnd, String type, int quantity, double amount) {
 
-		// Calculate the sum of quotes for the current index, include the amount 
-		double sum = indexes.stream()
-			    .mapToDouble(index -> index.getClose() * amount)
-			    .reduce(0.0, Double::sum);
+	    // Calculate the sum of quotes for the current index, taking the amount into account
+	    double sum = indexes.stream()
+	            .mapToDouble(index -> index.getClose() * amount)
+	            .sum();
 
-		// Calculate statistical indicators based on the sums
-		double max = sum;
-		double min = sum;
+	    // Calculate statistical indicators based on the sums
+	    double max = sum;
+	    double min = sum;
 
-		// Calculate the actual maximum and minimum values based on the sum of quotes
-		for (int i = 0; i < indexes.size(); i++) {
-			double currentSum = indexes.get(i).getClose() * amount;
-			
-			max = currentSum > max ? currentSum : max;
-		
-			min = currentSum < min ? currentSum : min;
-			
-		}
+	    // Calculate the actual maximum and minimum values based on the sum of quotes
+	    for (Index index : indexes) {
+	        double currentSum = index.getClose() * amount;
+	        max = Math.max(currentSum, max);
+	        min = Math.min(currentSum, min);
+	    }
 
-		double mean = sum / indexes.size();
-		
-		double median = calculateMedian(indexes.stream()
-								.mapToDouble(index -> index.getClose() * amount)
-								.boxed()
-								.collect(Collectors.toList())
-								);
-		
-		double std = calculateStandardDeviation(indexes.stream()
-										.mapToDouble(index -> index.getClose() * amount)
-										.boxed()
-										.collect(Collectors.toList())
-										, mean);
+	    double mean = sum / indexes.size();
+	    double median = calculateMedian(indexes.stream()
+	            .mapToDouble(index -> index.getClose() * amount)
+	            .boxed()
+	            .collect(Collectors.toList()));
+	    double std = calculateStandardDeviation(indexes.stream()
+	            .mapToDouble(index -> index.getClose() * amount)
+	            .boxed()
+	            .collect(Collectors.toList()), mean);
 
-		return new IndexHistoryResponseDto(periodStart, periodEnd, indexName, quantity + " " + type, max, mean, median,
-				min, std);
+	    return new IndexHistoryResponseDto(periodStart, periodEnd, indexName, quantity + " " + type, max, mean, median, min, std);
 	}
+
 
 	public double calculateMedian(List<Double> sortedClosePrices) {
 		int size = sortedClosePrices.size();

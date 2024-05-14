@@ -47,4 +47,7 @@ public interface CommunicationService {
 
 	double prediction();
 
+	Iterable<IndexHistoryResponseDto> calcSumPackageWithoutAggreagtion(
+			IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto);
+
 }

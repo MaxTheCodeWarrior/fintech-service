@@ -121,12 +121,12 @@ public class CommunicationController {
 	 */
 	
 	@PostMapping("/index/sum")
-	public ResponseEntity<IndexHistoryResponseDto> calcSumPackage(@RequestBody IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
+	public ResponseEntity<Iterable<IndexHistoryResponseDto>> calcSumPackage(@RequestBody IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
 		//TODO show the message 
-		if(indexRequestWithAmountFieldDto.getAmount().size() < indexRequestWithAmountFieldDto.getIndexs().size()) {
+		if(indexRequestWithAmountFieldDto.getAmount().size() != indexRequestWithAmountFieldDto.getIndexs().size()) {
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).build();
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(communicationService.calcSumPackage(indexRequestWithAmountFieldDto));
+		return ResponseEntity.status(HttpStatus.OK).body(communicationService.calcSumPackageWithoutAggreagtion(indexRequestWithAmountFieldDto));
 	}
 	
 	/**

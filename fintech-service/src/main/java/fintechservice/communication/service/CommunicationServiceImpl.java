@@ -229,6 +229,55 @@ public class CommunicationServiceImpl implements CommunicationService {
 				periodStatisticsList);
 	}
 
+	@Transactional
+	@Override
+	public List<IndexHistoryResponseDto> calcSumPackageWithoutAggreagtion(IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
+	    List<IndexHistoryResponseDto> aggregatedStatisticsList = new ArrayList<>();
+
+	    List<String> indexNames = indexRequestWithAmountFieldDto.getIndexs();
+	    String type = indexRequestWithAmountFieldDto.getType();
+	    int quantity = indexRequestWithAmountFieldDto.getQuantity();
+	    LocalDate from = indexRequestWithAmountFieldDto.getFrom();
+	    LocalDate to = indexRequestWithAmountFieldDto.getTo();
+	    List<Double> amounts = indexRequestWithAmountFieldDto.getAmount();
+
+	    // Iterate over the time range
+	    while (!from.isAfter(to)) {
+	        LocalDate periodStart = from;
+	        LocalDate periodEnd = indexStatisticsCalculator.calculatePeriodEnd(from, type, quantity, to);
+
+	        // Iterate over each indexName to calculate statistics for each
+	        List<IndexHistoryResponseDto> periodStatisticsList = new ArrayList<>();
+	        for (int i = 0; i < indexNames.size(); i++) {
+	            String indexName = indexNames.get(i);
+	            Double amount = amounts.get(i);
+
+	            // Retrieve indexes for the current indexName within the current period
+	            List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
+	                    .collect(Collectors.toList());
+
+	            // Calculate statistics for the current indexName and add to the list
+	            IndexHistoryResponseDto periodStatistics = indexStatisticsCalculator
+	                    .calculateStatisticsForPeriodWithAmount(indexes, indexName, periodStart, periodEnd,
+	                            type, quantity, amount);
+
+	            periodStatisticsList.add(periodStatistics);
+	        }
+
+	        // Aggregate statistics for the current period and add to the aggregated list
+	        IndexHistoryResponseDto aggregatedStatistics = indexStatisticsCalculator
+	                .aggregateStatistics("Package for: " + String.join(", ", indexNames), periodStatisticsList);
+	        aggregatedStatisticsList.add(aggregatedStatistics);
+
+	        // Move to the next period
+	        from = periodEnd.plusDays(1);
+	    }
+
+	    return aggregatedStatisticsList;
+	}
+
+
+	
 	@Override
 	public IndexIncomeApyResponseDto calcIncomeWithApy(IndexRequestDto indexRequestDto) {
 
