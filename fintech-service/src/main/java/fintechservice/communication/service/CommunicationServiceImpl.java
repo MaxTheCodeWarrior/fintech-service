@@ -3,9 +3,12 @@ package fintechservice.communication.service;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -162,6 +165,10 @@ public class CommunicationServiceImpl implements CommunicationService {
 		LocalDate from = indexRequestDto.getFrom();
 		LocalDate to = indexRequestDto.getTo();
 
+		double startClose = 0;
+		double endClose = 0;
+		double lastNonZeroClose = 0;
+
 		// Iterate over the time range
 		while (!from.isAfter(to)) {
 			LocalDate periodStart = from;
@@ -174,11 +181,37 @@ public class CommunicationServiceImpl implements CommunicationService {
 						.collect(Collectors.toList());
 				// Calculate statistics for the current period
 
-				IndexCloseValueDto subPeriodQuotes = indexStatisticsCalculator.calculateSubPeriodQuotes(indexes,
-						indexName, periodStart, periodEnd, type, quantity);
+				List<Double> listClose = new ArrayList<>();
+
+				// Iterate over the indexes within the current period
+				for (Index index : indexes) {
+
+					// Formatting double to 0.00
+					BigDecimal bd = new BigDecimal(index.getClose()).setScale(2, RoundingMode.HALF_UP);
+					double closeValue = bd.doubleValue();
+
+					if (closeValue == 0) {
+						closeValue = lastNonZeroClose; // Use the last non-zero close value
+					} else {
+						lastNonZeroClose = closeValue; // Update the last non-zero close value
+					}
+
+					// Update startClose and endClose values
+					if (startClose == 0) {
+						startClose = closeValue;
+					}
+					endClose = closeValue;
+
+					// Add close value to the list of close values
+					listClose.add(closeValue);
+				}
+				// Reverse the list
+				Collections.reverse(listClose);
 
 				// Add sub-period quotes to the response list
-				response.add(subPeriodQuotes);
+				response.add(new IndexCloseValueDto(periodStart, periodEnd, indexName, quantity + " " + type,
+						periodStart, periodEnd, startClose, endClose, endClose - startClose, listClose));
+
 			}
 			// Move to the next period
 			from = periodEnd.plusDays(1); // Move to the day after the period end to include it
@@ -233,7 +266,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 	@Override
 	public List<IndexHistoryResponseDto> calcSumPackageWithoutAggreagtion(
 			IndexRequestWithAmountFieldDto indexRequestWithAmountFieldDto) {
-		
+
 		List<IndexHistoryResponseDto> aggregatedStatisticsList = new ArrayList<>();
 
 		List<String> indexNames = indexRequestWithAmountFieldDto.getIndexs();
@@ -242,9 +275,9 @@ public class CommunicationServiceImpl implements CommunicationService {
 		LocalDate from = indexRequestWithAmountFieldDto.getFrom();
 		LocalDate to = indexRequestWithAmountFieldDto.getTo();
 		List<Double> amounts = indexRequestWithAmountFieldDto.getAmount();
-		
+
 		Map<String, Double> purshasedPricesForIndexes = new HashMap<>();
-		
+
 		// Iterate over the time range
 		while (!from.isAfter(to)) {
 
@@ -253,7 +286,6 @@ public class CommunicationServiceImpl implements CommunicationService {
 
 			// Iterate over each indexName to calculate statistics for each
 			List<IndexHistoryResponseDto> periodStatisticsList = new ArrayList<>();
-			
 
 			for (int i = 0; i < indexNames.size(); i++) {
 				String indexName = indexNames.get(i);
@@ -261,7 +293,7 @@ public class CommunicationServiceImpl implements CommunicationService {
 				// Retrieve indexes for the current indexName within the current period
 				List<Index> indexes = communicationRepository.findByIndexBetween(indexName, periodStart, periodEnd)
 						.collect(Collectors.toList());
-				
+
 				// For getting the amount of indexes that was purchased in package
 				purshasedPricesForIndexes.putIfAbsent(indexName, amounts.get(i) / indexes.get(0).getClose());
 

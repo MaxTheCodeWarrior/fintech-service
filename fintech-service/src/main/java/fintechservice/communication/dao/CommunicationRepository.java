@@ -31,7 +31,8 @@ public interface CommunicationRepository extends JpaRepository<Index, Long> {
 	LocalDate findMaxDateInIndex(@Param("indexName") String indexName);
 
 	@Query("SELECT i FROM Index i WHERE i.index = :indexName AND i.date BETWEEN :from AND :to")
-	Stream<Index> findByIndexBetween(@Param("indexName") String indexName, @Param("from") LocalDate from, @Param("to") LocalDate to);
+	Stream<Index> findByIndexBetween(@Param("indexName") String indexName, @Param("from") LocalDate from,
+			@Param("to") LocalDate to);
 
 	@Query("SELECT i FROM Index i WHERE i.index IN :indexNames AND i.date BETWEEN :from AND :to")
 	Stream<Index> findAllIndexesBetween(@Param("indexNames") List<String> indexNames, @Param("from") LocalDate from,
